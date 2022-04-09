@@ -38,6 +38,7 @@ import { TextField } from "formik-mui";
 
 // YUP
 import * as Yup from "yup";
+import axios from "axios";
 
 // HOOKS
 // import { useAuth } from "../../hooks";
@@ -53,36 +54,34 @@ const SignInSchema = Yup.object().shape({
   password: Yup.string().required("Field required !"),
   confirmPassword: Yup.string().required("Field required !"),
 });
-const testExistUser = {
-  email: "admin@voiz.vn",
-  password: "123456",
-};
 
 const Index = () => {
   const router = useRouter();
 
   const onSubmit = async (values) => {
-    console.log(values);
-    if (values.email && values.password) {
-      if (values.email === testExistUser.email) {
-        toast.error("Email has been used!!!");
-        return;
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/signup`,
+      {
+        email: values.email,
+        password: values.password,
       }
-    }
+    );
+
     if (values.password != values.confirmPassword) {
       toast.error("Password not match!!!");
       return;
     }
 
-    // Set form = null
-    values.email = initialValues.email;
-    values.password = initialValues.password;
-    values.confirmPassword = initialValues.confirmPassword;
-    toast.success(
-      "Congratulation. Your account has been successfully created!"
-    );
-    // we can move to Sign In Page
-    router.push("/auth/signin");
+    if (res.status === 200) {
+      if (res.data.success == true) {
+        toast.success(
+          "Sign up success, please check your email to verify your account"
+        );
+        // router.push("/auth/signin");
+      } else {
+        toast.error(res.data.message);
+      }
+    }
   };
 
   return (
