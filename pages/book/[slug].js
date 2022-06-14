@@ -11,9 +11,11 @@ import Button from '@mui/material/Button';
 import Layout from '../../components/layout/Layout';
 import ReactAudioPlayer from 'react-audio-player';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import axios from 'axios';
 import moment from 'moment';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { addBooksToCart } from '../../redux/storeManage';
 
 // import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 // import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -38,7 +40,8 @@ const UnitItem = styled('div')((props) => ({
 
 const Index = ({ book, audios }) => {
     const router = useRouter();
-    const { jwt } = useSelector((state) => state.storeManage);
+    const dispatch = useDispatch();
+    const { jwt, cart } = useSelector((state) => state.storeManage);
     const [audioIndex, setAudioIndex] = useState(0);
     const [canHear, setCanHear] = useState(false);
 
@@ -58,13 +61,39 @@ const Index = ({ book, audios }) => {
                 }
             }
         }
+
+        async function getPayment() {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/payment`, {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                },
+            });
+            if (res.status == 200) {
+                if (res.data.success == true) {
+                    const data = res.data.data;
+                    data.map((item) => {
+                        item.books.map((b) => {
+                            if (b._id == book._id) {
+                                setCanHear(true);
+                            }
+                        });
+                    });
+                }
+            }
+        }
         if (jwt != 'null') {
             getUserInfo();
+            getPayment();
         }
         if (book.isVip == false) {
             setCanHear(true);
         }
     }, [jwt]);
+
+    function handleAddToCart() {
+        dispatch(addBooksToCart(book));
+        router.push('/checkout/cart');
+    }
 
     return (
         <>
@@ -83,6 +112,10 @@ const Index = ({ book, audios }) => {
                                     <p className="text-xl font-medium pb-4 leading-8">{book.name}</p>
                                     <p className="text-lg pb-4">Tác giả: {book.author}</p>
                                     <p className="text-lg pb-4">Kênh: {book.channel}</p>
+                                    <p className="text-lg pb-4">
+                                        Giá:{' '}
+                                        {book.prices.toLocaleString('it-IT', { style: 'currency', currency: 'VND' })} đ
+                                    </p>
                                     <p className="text-lg pb-4">Lượt xem: {book.views}</p>
                                     <FormControlLabel
                                         label={<p className="text-lg text-[#1976d2]">Đánh dấu sách</p>}
@@ -94,10 +127,10 @@ const Index = ({ book, audios }) => {
                                 <Box>
                                     <p className="text-xl font-medium pb-4 text-blue-600/100">Lời tựa</p>
                                     <p className="text-lg pb-4">{book.description}</p>
-                                    <Button startIcon={<PlayArrowIcon />} size="large" variant="contained">
+                                    {/* <Button startIcon={<PlayArrowIcon />} size="large" variant="contained">
                                         Phát tất cả
-                                    </Button>
-                                    <div className="pb-8" />
+                                    </Button> */}
+                                    {/* <div className="pb-8" /> */}
                                     {canHear == true ? (
                                         audios.map((audio, key) => (
                                             <UnitItem
@@ -109,7 +142,17 @@ const Index = ({ book, audios }) => {
                                             </UnitItem>
                                         ))
                                     ) : (
-                                        <p className="text-lg">Vui lòng nâng cấp VIP để nghe!</p>
+                                        <div>
+                                            <p className="text-lg pb-3">Vui lòng nâng cấp VIP để nghe!</p>
+                                            <Button
+                                                onClick={handleAddToCart}
+                                                startIcon={<ShoppingCartIcon />}
+                                                size="large"
+                                                variant="contained"
+                                            >
+                                                Mua lẻ sách
+                                            </Button>
+                                        </div>
                                     )}
                                 </Box>
                             </Grid>
