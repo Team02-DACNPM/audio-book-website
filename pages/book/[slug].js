@@ -16,6 +16,7 @@ import axios from 'axios';
 import moment from 'moment';
 import { useDispatch, useSelector } from 'react-redux';
 import { addBooksToCart } from '../../redux/storeManage';
+import Link from 'next/link';
 
 // import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 // import SkipNextIcon from '@mui/icons-material/SkipNext';
@@ -44,6 +45,7 @@ const Index = ({ book, audios }) => {
     const { jwt, cart } = useSelector((state) => state.storeManage);
     const [audioIndex, setAudioIndex] = useState(0);
     const [canHear, setCanHear] = useState(false);
+    const [isBookmark, setIsBookmark] = useState(false);
 
     useEffect(() => {
         async function getUserInfo() {
@@ -81,18 +83,69 @@ const Index = ({ book, audios }) => {
                 }
             }
         }
+
+        async function getBookmark() {
+            const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/bookmark/${book._id}`, {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                },
+            });
+            if (res.status == 200) {
+                if (res.data.success == true) {
+                    const data = res.data.data;
+                    console.log(data);
+                    setIsBookmark(true);
+                }
+            }
+        }
+
         if (jwt != 'null') {
             getUserInfo();
             getPayment();
+            getBookmark();
         }
         if (book.isVip == false) {
             setCanHear(true);
         }
-    }, [jwt]);
+    }, [jwt, isBookmark]);
 
     function handleAddToCart() {
         dispatch(addBooksToCart(book));
         router.push('/checkout/cart');
+    }
+
+    async function handleCheckBookmark(e) {
+        const check = e.target.checked;
+        setIsBookmark(check);
+        if (check) {
+            const res = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/bookmark/`,
+                { bookId: book._id },
+                {
+                    headers: {
+                        Authorization: `Bearer ${jwt}`,
+                    },
+                },
+            );
+            if (res.status == 200) {
+                if (res.data.success == true) {
+                    const data = res.data.data;
+                    console.log(data);
+                }
+            }
+        } else {
+            const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/bookmark/${book._id}`, {
+                headers: {
+                    Authorization: `Bearer ${jwt}`,
+                },
+            });
+            if (res.status == 200) {
+                if (res.data.success == true) {
+                    const data = res.data.data;
+                    console.log(data);
+                }
+            }
+        }
     }
 
     return (
@@ -117,10 +170,14 @@ const Index = ({ book, audios }) => {
                                         {book.prices.toLocaleString('it-IT', { style: 'currency', currency: 'VND' })} đ
                                     </p>
                                     <p className="text-lg pb-4">Lượt xem: {book.views}</p>
-                                    <FormControlLabel
-                                        label={<p className="text-lg text-[#1976d2]">Đánh dấu sách</p>}
-                                        control={<Checkbox />}
-                                    />
+                                    {jwt != 'null' && (
+                                        <FormControlLabel
+                                            onChange={handleCheckBookmark}
+                                            checked={isBookmark}
+                                            label={<p className="text-lg text-[#1976d2]">Đánh dấu sách</p>}
+                                            control={<Checkbox />}
+                                        />
+                                    )}
                                 </Box>
                             </Grid>
                             <Grid item xs>
@@ -143,15 +200,27 @@ const Index = ({ book, audios }) => {
                                         ))
                                     ) : (
                                         <div>
-                                            <p className="text-lg pb-3">Vui lòng nâng cấp VIP để nghe!</p>
-                                            <Button
-                                                onClick={handleAddToCart}
-                                                startIcon={<ShoppingCartIcon />}
-                                                size="large"
-                                                variant="contained"
-                                            >
-                                                Mua lẻ sách
-                                            </Button>
+                                            {jwt != 'null' ? (
+                                                <>
+                                                    <p className="text-lg pb-3">Vui lòng nâng cấp VIP để nghe!</p>
+                                                    <Button
+                                                        onClick={handleAddToCart}
+                                                        startIcon={<ShoppingCartIcon />}
+                                                        size="large"
+                                                        variant="contained"
+                                                    >
+                                                        Mua lẻ sách
+                                                    </Button>
+                                                </>
+                                            ) : (
+                                                <div className="flex">
+                                                    Vui lòng
+                                                    <div className="text-blue-500 font-bold px-1">
+                                                        <Link href="/auth/signin">đăng nhập</Link>
+                                                    </div>
+                                                    để trải nghiệm tính năng này!
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </Box>

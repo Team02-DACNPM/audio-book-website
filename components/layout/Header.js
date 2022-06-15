@@ -255,6 +255,11 @@ const ResponsiveAppBar = () => {
                                                         <Link href="/checkout/cart">Cart</Link>
                                                     </Typography>
                                                 </MenuItem>
+                                                <MenuItem onClick={handleCloseUserMenu}>
+                                                    <Typography textAlign="center">
+                                                        <Link href="/bookmark">Bookmark</Link>
+                                                    </Typography>
+                                                </MenuItem>
                                                 <MenuItem onClick={handleSignOut}>
                                                     <Typography textAlign="center">Sign Out</Typography>
                                                 </MenuItem>
