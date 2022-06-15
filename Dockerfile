@@ -15,4 +15,4 @@ COPY . .
 RUN yarn build
 
 # Run the "start" script in package.json
-CMD ["yarn", "start"]
+CMD ["yarn", "dev"]
